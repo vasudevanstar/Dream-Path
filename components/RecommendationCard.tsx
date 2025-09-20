@@ -1,5 +1,5 @@
 import React from 'react';
-import { LocationIcon, GraduationCapIcon, ChartBarIcon, RupeeIcon, TrophyIcon } from './Icons';
+import { LocationIcon, GraduationCapIcon, ChartBarIcon, RupeeIcon, TrophyIcon, PhoneIcon, GlobeIcon } from './Icons';
 
 interface RecommendationCardProps {
   data: { [key: string]: string };
@@ -26,7 +26,7 @@ const DetailItem: React.FC<DetailItemProps> = ({ icon, label, value }) => {
 
 
 const RecommendationCard: React.FC<RecommendationCardProps> = ({ data }) => {
-  const { Course, College, Location, Justification, ...details } = data;
+  const { Course, College, Location, Justification, Website, Contact, ...details } = data;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 my-2 border border-black/5 dark:border-white/10">
@@ -43,6 +43,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ data }) => {
         <DetailItem icon={<ChartBarIcon />} label="Cutoff" value={details.Cutoff} />
         <DetailItem icon={<RupeeIcon />} label="Annual Fees" value={details.Fees} />
         <DetailItem icon={<TrophyIcon />} label="Ranking" value={details.Ranking} />
+        <DetailItem icon={<PhoneIcon />} label="Contact" value={Contact} />
       </div>
 
       {Justification && (
@@ -50,6 +51,18 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ data }) => {
           <h4 className="font-semibold text-slate-600 dark:text-slate-300 mb-1 text-sm">Why it's a good fit:</h4>
           <p className="text-sm text-slate-700 dark:text-slate-400 italic">"{Justification}"</p>
         </div>
+      )}
+
+      {Website && (
+        <a
+          href={Website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex items-center justify-center gap-2 w-full p-2 rounded-lg bg-teal-500 text-white font-bold hover:bg-teal-600 transition-colors"
+        >
+          <GlobeIcon />
+          <span>Visit Website</span>
+        </a>
       )}
     </div>
   );

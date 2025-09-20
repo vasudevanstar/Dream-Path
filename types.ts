@@ -8,6 +8,8 @@ export type Message = {
 export type College = {
   name: string;
   location: string;
+  website?: string;
+  contact?: string;
   courses: Course[];
 };
 

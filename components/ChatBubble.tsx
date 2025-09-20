@@ -7,15 +7,18 @@ interface ChatBubbleProps {
   message: Message;
 }
 
+// FIX: Improved parsing logic to handle values containing colons (like URLs).
 const parseRecommendation = (rawContent: string): { [key: string]: string } => {
   const lines = rawContent.trim().split('\n');
   const data: { [key: string]: string } = {};
   lines.forEach((line) => {
-    const parts = line.split(/:(.*)/s);
-    if (parts.length === 2) {
-      const key = parts[0].trim();
-      const value = parts[1].trim();
-      data[key] = value;
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > -1) {
+      const key = line.substring(0, colonIndex).trim();
+      const value = line.substring(colonIndex + 1).trim();
+      if (key && value) {
+        data[key] = value;
+      }
     }
   });
   return data;
