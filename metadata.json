@@ -1,0 +1,7 @@
+{
+  "name": "Copy of 4 ui 1",
+  "description": "Dream Path is an AI-powered career guide to help students explore higher education options after their exams. It provides personalized course and college recommendations based on academic background, interests, and preferences.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
