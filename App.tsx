@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import type { Message } from './types';
+import type { Message, SearchFilters } from './types';
 import ChatBubble from './components/ChatBubble';
 import ChatInput from './components/ChatInput';
 import LoadingDots from './components/LoadingDots';
@@ -173,6 +174,7 @@ const App: React.FC = () => {
     if (lastMessage && lastMessage.role === 'model') {
       const textToSpeak = lastMessage.text
         .replace(/```recommendation[\s\S]*?```/g, 'I have a recommendation. Please see the details on your screen.')
+        .replace(/```search_filters[\s\S]*?```/g, 'I can help with that. Please use the filters on your screen to continue.')
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
         .replace(/[*_`#🤔🛠️🔌🙏]/g, '');
 
@@ -311,7 +313,7 @@ const App: React.FC = () => {
     
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.lang = 'ta-IN';
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => {
@@ -338,6 +340,17 @@ const App: React.FC = () => {
     };
     
     recognition.start();
+  };
+
+  const handleApplyFilters = (filters: SearchFilters) => {
+    let prompt = "Find colleges for me based on these criteria:\n";
+    if (filters.location) prompt += `- Location: ${filters.location}\n`;
+    if (filters.subjects && filters.subjects.length > 0) prompt += `- Subjects: ${filters.subjects.join(', ')}\n`;
+    if (filters.maxAnnualFees) prompt += `- Maximum Annual Fees: ₹${filters.maxAnnualFees.toLocaleString('en-IN')}\n`;
+    if (filters.admissionCriteria) prompt += `- Admission Through: ${filters.admissionCriteria}\n`;
+    prompt += "Please provide some recommendations.";
+
+    handleSendMessage(prompt);
   };
 
   if (!userProfile) {
@@ -392,7 +405,7 @@ const App: React.FC = () => {
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 pt-24 sm:pt-28">
                     <div className="max-w-4xl mx-auto space-y-6">
                         {messages.map((message) => (
-                            <ChatBubble key={message.id} message={message} />
+                            <ChatBubble key={message.id} message={message} onApplyFilters={handleApplyFilters} />
                         ))}
                         {isLoading && <LoadingDots />}
                         <div ref={messagesEndRef} />

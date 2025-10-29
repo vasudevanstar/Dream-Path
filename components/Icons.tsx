@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const DreamPathLogo = () => (
@@ -162,6 +163,21 @@ export const TipsIcon = () => (
         <path d="M12 17.69l.346.666 1.054 1.956 2.12.308-1.533 1.493-.362 2.112-1.9-.998L12 23.35l-.725.378-1.9.998-.362-2.112-1.534-1.493 2.12-.308L10.654 18.356 12 17.69z" />
     </svg>
 );
+
+export const TableIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="3" y1="9" x2="21" y2="9"></line>
+        <line x1="9" y1="3" x2="9" y2="21"></line>
+    </svg>
+);
+
+export const FilterIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+    </svg>
+);
+
 
 // FIX: Added missing icons for RecommendationCard.
 export const LocationIcon = () => (

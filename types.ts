@@ -20,3 +20,10 @@ export type Course = {
   fees: number; // Annual fee in INR
   ranking?: number; // Optional national ranking
 };
+
+export type SearchFilters = {
+  location?: string;
+  subjects?: string[];
+  maxAnnualFees?: number;
+  admissionCriteria?: string;
+};

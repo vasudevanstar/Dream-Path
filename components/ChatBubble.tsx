@@ -1,13 +1,16 @@
+
 import React from 'react';
-import type { Message } from '../types';
-import { UserIcon, DreamPathLogo, CareerIcon, SubjectsIcon, TipsIcon } from './Icons';
+import type { Message, SearchFilters } from '../types';
+import { UserIcon, DreamPathLogo, CareerIcon, SubjectsIcon, TipsIcon, TableIcon, FilterIcon } from './Icons';
 import RecommendationCard from './RecommendationCard';
+import ComparisonTable from './ComparisonTable';
+import FilterPanel from './FilterPanel';
 
 interface ChatBubbleProps {
   message: Message;
+  onApplyFilters: (filters: SearchFilters) => void;
 }
 
-// FIX: Improved parsing logic to handle values containing colons (like URLs).
 const parseRecommendation = (rawContent: string): { [key: string]: string } => {
   const lines = rawContent.trim().split('\n');
   const data: { [key: string]: string } = {};
@@ -24,8 +27,50 @@ const parseRecommendation = (rawContent: string): { [key: string]: string } => {
   return data;
 };
 
+const parseTable = (tableString: string): { headers: string[]; rows: string[][] } | null => {
+    const lines = tableString.trim().split('\n').map(line => line.trim()).filter(Boolean);
+    if (lines.length < 2) return null;
+
+    const [headerLine, separatorLine, ...rowLines] = lines;
+
+    if (!headerLine.includes('|') || !separatorLine.includes('-')) {
+        return null;
+    }
+
+    const parseRow = (line: string) => line.split('|').map(s => s.trim()).slice(1, -1);
+
+    const headers = parseRow(headerLine);
+    if (headers.length === 0) return null;
+
+    const rows = rowLines
+        .map(parseRow)
+        .filter(row => row.length === headers.length);
+
+    if (rows.length === 0) return null;
+
+    return { headers, rows };
+};
+
+const parseSearchFilters = (rawContent: string): SearchFilters | null => {
+  try {
+    const jsonString = rawContent.trim();
+    const data = JSON.parse(jsonString);
+    return data as SearchFilters;
+  } catch (error) {
+    console.error("Failed to parse search filters JSON:", error);
+    return null;
+  }
+};
+
+
 const getBotIcon = (text: string) => {
     const lowerText = text.toLowerCase();
+    if (lowerText.includes('```search_filters')) {
+      return <FilterIcon />;
+    }
+    if (text.includes('|') && text.includes('---')) {
+        return <TableIcon />;
+    }
     if (lowerText.includes('college') || lowerText.includes('career') || lowerText.includes('course') || lowerText.includes('recommendation')) {
         return <CareerIcon />;
     }
@@ -38,54 +83,74 @@ const getBotIcon = (text: string) => {
     return <DreamPathLogo />;
 };
 
-
-const renderContent = (text: string) => {
+const renderTextWithLinks = (text: string, keyPrefix: string) => {
   const linkClassName = "text-blue-500 dark:text-blue-400 underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors";
+  const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s]+)/g;
 
-  const combinedRegex = /```recommendation([\s\S]*?)```|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s]+)/g;
-  
   const elements: (string | JSX.Element)[] = [];
   let lastIndex = 0;
   let match;
 
-  while ((match = combinedRegex.exec(text)) !== null) {
+  while ((match = linkRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      elements.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex, match.index)}</span>);
+      elements.push(text.substring(lastIndex, match.index));
     }
-    
-    const [fullMatch, recommendationContent, mdText, mdUrl, plainUrl] = match;
-
-    if (recommendationContent) {
-      const recommendationData = parseRecommendation(recommendationContent);
-      elements.push(
-        <RecommendationCard key={`rec-${lastIndex}`} data={recommendationData} />
-      );
-    } else if (mdText && mdUrl) {
-      elements.push(
-        <a href={mdUrl} key={`mdlink-${lastIndex}`} target="_blank" rel="noopener noreferrer" className={linkClassName}>
-          {mdText}
-        </a>
-      );
-    } else if (plainUrl) {
-      elements.push(
-        <a href={plainUrl} key={`plainlink-${lastIndex}`} target="_blank" rel="noopener noreferrer" className={linkClassName}>
-          {plainUrl}
-        </a>
-      );
-    }
-    
+    const [fullMatch, mdText, mdUrl, plainUrl] = match;
+    const url = mdUrl || plainUrl;
+    const linkText = mdText || url;
+    elements.push(
+      <a href={url} key={`${keyPrefix}-${lastIndex}`} target="_blank" rel="noopener noreferrer" className={linkClassName}>
+        {linkText}
+      </a>
+    );
     lastIndex = match.index + fullMatch.length;
   }
-  
+
   if (lastIndex < text.length) {
-    elements.push(<span key={`text-end`}>{text.substring(lastIndex)}</span>);
+    elements.push(text.substring(lastIndex));
   }
-  
+
   return <>{elements}</>;
 };
 
+const renderContent = (text: string, onApplyFilters: (filters: SearchFilters) => void) => {
+  const blockSplitRegex = /(```(?:recommendation|search_filters)[\s\S]*?```|(?:\n|^)(?:\|.*\|(?:\r?\n\|.*\|)+))/;
+  const parts = text.split(blockSplitRegex);
 
-const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (!part) return null;
+
+        if (part.startsWith('```recommendation')) {
+          const recommendationContent = part.replace(/```recommendation|```/g, '').trim();
+          const recommendationData = parseRecommendation(recommendationContent);
+          return <RecommendationCard key={`rec-${index}`} data={recommendationData} />;
+        }
+
+        if (part.startsWith('```search_filters')) {
+          const filtersContent = part.replace(/```search_filters|```/g, '').trim();
+          const filtersData = parseSearchFilters(filtersContent);
+          if (filtersData) {
+            return <FilterPanel key={`filter-${index}`} initialFilters={filtersData} onApply={onApplyFilters} />;
+          }
+        }
+
+        if (part.trim().startsWith('|')) {
+          const tableData = parseTable(part);
+          if (tableData) {
+            return <ComparisonTable key={`table-${index}`} headers={tableData.headers} rows={tableData.rows} />;
+          }
+        }
+
+        return <React.Fragment key={`text-${index}`}>{renderTextWithLinks(part, `text-${index}`)}</React.Fragment>;
+      })}
+    </>
+  );
+};
+
+
+const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onApplyFilters }) => {
   const isUser = message.role === 'user';
 
   if (isUser) {
@@ -117,7 +182,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
           borderRadius: '20px 20px 20px 4px',
         }}
       >
-        <div className="whitespace-pre-wrap">{renderContent(message.text)}</div>
+        <div className="whitespace-pre-wrap">{renderContent(message.text, onApplyFilters)}</div>
       </div>
     </div>
   );
